@@ -17,6 +17,7 @@ class Blockchain():
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.address = self.web3.eth.defaultAccount
     
+    # compile contract and save compiled contract json file
     def compile_contract(self):
         with open(os.path.join(BASEDIR, self.contract_file), 'r') as f:
             source_sol_file = f.read()
@@ -38,6 +39,7 @@ class Blockchain():
         self.abi = compiled_sol["contracts"][self.contract_file][self.contract_name]["abi"]
         self.bytecode = compiled_sol["contracts"][self.contract_file][self.contract_name]["evm"]["bytecode"]["object"]
         
+    # get contract
     def get_constact(self):
         self.compile_contract()
         
@@ -61,11 +63,13 @@ class Blockchain():
         return self.contract
     
     def test_connection(self):
-        return self.contract.functions["connectTest"]().call()
+        return self.contract.functions["connectTest"]().call()        
       
-    def read_contract(self, func):
-        return self.contract.functions[func]().call()
+    # cost no gas
+    def read_contract(self, func, **kwargs):
+        return self.contract.functions[func](**kwargs).call()
     
+    # cost gas
     def interact_contract(self, func, **kwargs):
         tx = self.contract.functions[func](**kwargs).buildTransaction(
             {
@@ -78,6 +82,14 @@ class Blockchain():
         tx_create = self.web3.eth.account.sign_transaction(tx, private_key=self.private_key)
         tx_hash = self.web3.eth.send_raw_transaction(tx_create.rawTransaction)
         tx_receipt = self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        print(tx_receipt)
         if tx_receipt.status == 1:
             return True
         return False
+
+
+if __name__ == "__main__":
+    blockchain = Blockchain()
+    blockchain.get_constact()
+    # print(blockchain.test_connection())
+    print(blockchain.interact_contract('addProduct', productName=Web3.toBytes(text='test'), productDescription=Web3.toBytes(text='test')))
